@@ -113,6 +113,7 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Kanit', sans-serif;
     background: linear-gradient(180deg, hsl(var(--background)), hsl(140 30% 92%));
     min-height: 100vh;
   }
