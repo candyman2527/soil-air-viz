@@ -17,6 +17,7 @@ interface SensorData {
   potassium_value: number | null;
   auto_message: string;
   audio_url: string | null;
+  webhook_timestamp: string | null;
 }
 
 const Dashboard = () => {
@@ -112,6 +113,7 @@ const Dashboard = () => {
       potassium_value: webhookData?.potassium_value ?? null,
       auto_message: webhookData?.auto_message ?? "",
       audio_url: webhookData?.audio_url ?? null,
+      webhook_timestamp: webhookData?.created_at ?? null,
     };
 
     setSensorData(mergedData);
@@ -222,6 +224,18 @@ const Dashboard = () => {
               <Sprout className="h-6 w-6 text-primary" />
               ค่าธาตุอาหารในดิน (NPK)
             </CardTitle>
+            {sensorData.webhook_timestamp && (
+              <p className="text-sm text-muted-foreground mt-1">
+                วันที่ส่งข้อมูล: {new Date(sensorData.webhook_timestamp).toLocaleString('th-TH', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit'
+                })}
+              </p>
+            )}
           </CardHeader>
           <CardContent>
             <NPKDisplay
