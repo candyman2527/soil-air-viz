@@ -9,12 +9,12 @@ import { NPKDisplay } from "@/components/dashboard/NPKDisplay";
 import { Thermometer, Droplets, Sprout, MessageSquare, Volume2, LogOut, User } from "lucide-react";
 
 interface SensorData {
-  temperature: number;
-  humidity: number;
-  soil_moisture: number;
-  nitrogen_value: number;
-  phosphorus_value: number;
-  potassium_value: number;
+  temperature: number | null;
+  humidity: number | null;
+  soil_moisture: number | null;
+  nitrogen_value: number | null;
+  phosphorus_value: number | null;
+  potassium_value: number | null;
   auto_message: string;
   audio_url: string | null;
 }
@@ -84,18 +84,37 @@ const Dashboard = () => {
   }, [navigate]);
 
   const fetchSensorData = async () => {
-    const { data, error } = await supabase
+    // Get latest temperature/humidity/soil_moisture from Node-RED
+    const { data: nodeRedData } = await supabase
       .from("sensor_data")
-      .select("*")
+      .select("temperature, humidity, soil_moisture, created_at")
+      .not("temperature", "is", null)
       .order("created_at", { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    if (error) {
-      console.error("Error fetching sensor data:", error);
-    } else if (data) {
-      setSensorData(data);
-    }
+    // Get latest NPK/audio data from Webhook
+    const { data: webhookData } = await supabase
+      .from("sensor_data")
+      .select("nitrogen_value, phosphorus_value, potassium_value, auto_message, audio_url, created_at")
+      .not("nitrogen_value", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    // Merge the two datasets
+    const mergedData: SensorData = {
+      temperature: nodeRedData?.temperature ?? null,
+      humidity: nodeRedData?.humidity ?? null,
+      soil_moisture: nodeRedData?.soil_moisture ?? null,
+      nitrogen_value: webhookData?.nitrogen_value ?? null,
+      phosphorus_value: webhookData?.phosphorus_value ?? null,
+      potassium_value: webhookData?.potassium_value ?? null,
+      auto_message: webhookData?.auto_message ?? "",
+      audio_url: webhookData?.audio_url ?? null,
+    };
+
+    setSensorData(mergedData);
   };
 
   const handleLogout = async () => {
