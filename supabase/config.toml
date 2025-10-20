@@ -2,3 +2,6 @@ project_id = "kjhlqaxewlluirzbxjup"
 
 [functions.receive-sensor-data]
 verify_jwt = false
+
+[functions.receive-nodered-data]
+verify_jwt = false

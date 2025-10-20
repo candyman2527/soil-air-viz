@@ -22,10 +22,7 @@ serve(async (req) => {
     // Parse multipart form data
     const formData = await req.formData();
     
-    // Extract sensor values
-    const temperature = parseFloat(formData.get("temperature") as string || "0");
-    const humidity = parseFloat(formData.get("humidity") as string || "0");
-    const soil_moisture = parseFloat(formData.get("soil_moisture") as string || "0");
+    // Extract sensor values (NPK + message from webhook)
     const nitrogen_value = parseFloat(formData.get("nitrogen") as string || "0");
     const phosphorus_value = parseFloat(formData.get("phosphorus") as string || "0");
     const potassium_value = parseFloat(formData.get("potassium") as string || "0");
@@ -73,13 +70,13 @@ serve(async (req) => {
       console.log("Audio public URL:", audioUrl);
     }
 
-    // Insert sensor data into database
+    // Insert sensor data into database (NPK + audio from webhook)
     const { data: insertData, error: insertError } = await supabase
       .from("sensor_data")
       .insert({
-        temperature,
-        humidity,
-        soil_moisture,
+        temperature: null,
+        humidity: null,
+        soil_moisture: null,
         nitrogen_value,
         phosphorus_value,
         potassium_value,
