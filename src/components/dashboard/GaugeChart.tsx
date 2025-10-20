@@ -7,7 +7,8 @@ interface GaugeChartProps {
 }
 
 export const GaugeChart = ({ value, max, label, unit, color }: GaugeChartProps) => {
-  const percentage = (value / max) * 100;
+  const safeValue = value ?? 0;
+  const percentage = (safeValue / max) * 100;
   const rotation = (percentage / 100) * 180;
 
   return (
@@ -47,7 +48,7 @@ export const GaugeChart = ({ value, max, label, unit, color }: GaugeChartProps) 
         {/* Center value */}
         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-center">
           <div className="text-2xl font-bold" style={{ color }}>
-            {value.toFixed(1)}
+            {value !== null ? value.toFixed(1) : "-"}
           </div>
           <div className="text-xs text-muted-foreground">{unit}</div>
         </div>

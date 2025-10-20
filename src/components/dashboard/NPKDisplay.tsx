@@ -1,9 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card";
 
 interface NPKDisplayProps {
-  nitrogen: number;
-  phosphorus: number;
-  potassium: number;
+  nitrogen: number | null;
+  phosphorus: number | null;
+  potassium: number | null;
 }
 
 export const NPKDisplay = ({ nitrogen, phosphorus, potassium }: NPKDisplayProps) => {
@@ -27,7 +27,7 @@ export const NPKDisplay = ({ nitrogen, phosphorus, potassium }: NPKDisplayProps)
               </div>
               <div className="text-right">
                 <div className="text-3xl font-bold" style={{ color: nutrient.color }}>
-                  {nutrient.value.toFixed(1)}
+                  {nutrient.value !== null ? nutrient.value.toFixed(1) : "-"}
                 </div>
                 <div className="text-xs text-muted-foreground">mg/kg</div>
               </div>
