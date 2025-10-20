@@ -19,19 +19,36 @@ serve(async (req) => {
     const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-    // Parse multipart form data
-    const formData = await req.formData();
-    
-    // Extract sensor values (NPK + message from webhook)
-    const nitrogen_value = parseFloat(formData.get("nitrogen") as string || "0");
-    const phosphorus_value = parseFloat(formData.get("phosphorus") as string || "0");
-    const potassium_value = parseFloat(formData.get("potassium") as string || "0");
-    const auto_message = formData.get("auto_message") as string || "";
+    const contentType = req.headers.get("content-type") || "";
+    let nitrogen_value = 0;
+    let phosphorus_value = 0;
+    let potassium_value = 0;
+    let auto_message = "";
+    let audioFile: File | null = null;
+
+    // Handle different content types
+    if (contentType.includes("multipart/form-data")) {
+      console.log("Processing multipart/form-data");
+      const formData = await req.formData();
+      nitrogen_value = parseFloat(formData.get("nitrogen") as string || "0");
+      phosphorus_value = parseFloat(formData.get("phosphorus") as string || "0");
+      potassium_value = parseFloat(formData.get("potassium") as string || "0");
+      auto_message = formData.get("auto_message") as string || "";
+      audioFile = formData.get("audio_file") as File;
+    } else if (contentType.includes("application/json")) {
+      console.log("Processing application/json");
+      const jsonData = await req.json();
+      nitrogen_value = parseFloat(jsonData.nitrogen || "0");
+      phosphorus_value = parseFloat(jsonData.phosphorus || "0");
+      potassium_value = parseFloat(jsonData.potassium || "0");
+      auto_message = jsonData.auto_message || "";
+    } else {
+      throw new Error("Unsupported content type. Use multipart/form-data or application/json");
+    }
     
     let audioUrl = null;
 
     // Handle audio file if present
-    const audioFile = formData.get("audio_file") as File;
     if (audioFile && audioFile.size > 0) {
       console.log("Processing audio file:", audioFile.name, "Size:", audioFile.size);
 
