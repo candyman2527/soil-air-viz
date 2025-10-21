@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { GaugeChart } from "@/components/dashboard/GaugeChart";
 import { NPKDisplay } from "@/components/dashboard/NPKDisplay";
-import { Thermometer, Droplets, Sprout, MessageSquare, Volume2, LogOut, User, Shield } from "lucide-react";
+import { Thermometer, Droplets, Sprout, MessageSquare, Volume2, LogOut, User, Shield, History } from "lucide-react";
 
 interface SensorData {
   temperature: number | null;
@@ -154,7 +154,15 @@ const Dashboard = () => {
               {username} {isAdmin && <span className="text-primary font-semibold">(Admin)</span>}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={() => navigate('/history')}
+              variant="outline"
+              className="flex items-center gap-2 border-border/50"
+            >
+              <History className="h-4 w-4" />
+              ประวัติข้อมูล
+            </Button>
             {isAdmin && (
               <Button
                 onClick={() => navigate('/admin')}
