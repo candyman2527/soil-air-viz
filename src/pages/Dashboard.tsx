@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { GaugeChart } from "@/components/dashboard/GaugeChart";
 import { NPKDisplay } from "@/components/dashboard/NPKDisplay";
-import { Thermometer, Droplets, Sprout, MessageSquare, Volume2, LogOut, User, Shield, History } from "lucide-react";
+import { Thermometer, Droplets, Sprout, MessageSquare, Volume2, LogOut, User, Shield, History, Send } from "lucide-react";
+import { MqttSettingsDialog } from "@/components/dashboard/MqttSettingsDialog";
 
 interface SensorData {
   temperature: number | null;
@@ -119,6 +120,59 @@ const Dashboard = () => {
     setSensorData(mergedData);
   };
 
+  const handlePublishMqtt = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "กรุณาเข้าสู่ระบบก่อน",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Load MQTT settings
+    const { data: mqttSettings, error: settingsError } = await supabase
+      .from("mqtt_settings")
+      .select("*")
+      .eq("user_id", session.user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (settingsError || !mqttSettings) {
+      toast({
+        title: "ไม่พบการตั้งค่า",
+        description: "กรุณาตั้งค่า MQTT ก่อนส่งข้อมูล",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Call edge function to publish MQTT
+    const { error } = await supabase.functions.invoke("publish-mqtt", {
+      body: {
+        url: mqttSettings.url,
+        port: mqttSettings.port,
+        topic: mqttSettings.topic,
+        message: mqttSettings.message,
+      },
+    });
+
+    if (error) {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถส่งข้อมูลไป MQTT ได้",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "สำเร็จ",
+        description: "ส่งข้อมูลไป MQTT เรียบร้อยแล้ว",
+      });
+    }
+  };
+
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -155,6 +209,14 @@ const Dashboard = () => {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={handlePublishMqtt}
+              className="flex items-center gap-2"
+            >
+              <Send className="h-4 w-4" />
+              กดดูสภาพดิน
+            </Button>
+            <MqttSettingsDialog />
             <Button
               onClick={() => navigate('/history')}
               variant="outline"
