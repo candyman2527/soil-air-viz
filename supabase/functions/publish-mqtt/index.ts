@@ -17,8 +17,8 @@ serve(async (req) => {
     console.log('Publishing to MQTT:', { url, port, topic, message });
 
     // Try to connect via WebSocket (MQTT over WebSocket)
-    // Most MQTT brokers support WebSocket on port 8083 or 9001
-    const wsPort = port === 1883 ? 8083 : port;
+    // Most MQTT brokers support WebSocket on port 9001 or 8083
+    const wsPort = port === 1883 ? 9001 : port;
     const wsUrl = `ws://${url}:${wsPort}`;
     
     try {
