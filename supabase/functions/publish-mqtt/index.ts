@@ -35,29 +35,50 @@ serve(async (req) => {
           clearTimeout(timeout);
           console.log('WebSocket connected');
           
-          // Send MQTT CONNECT packet (simplified)
+          // Send MQTT CONNECT packet (properly formatted)
+          const clientId = "deno-" + Date.now();
+          const clientIdBytes = new TextEncoder().encode(clientId);
+          
           const connectPacket = new Uint8Array([
             0x10, // CONNECT packet type
-            0x10, // Remaining length
-            0x00, 0x04, 0x4d, 0x51, 0x54, 0x54, // Protocol name "MQTT"
-            0x04, // Protocol level 4
-            0x02, // Connect flags
+            12 + clientIdBytes.length, // Remaining length
+            0x00, 0x04, // Protocol name length
+            0x4d, 0x51, 0x54, 0x54, // Protocol name "MQTT"
+            0x04, // Protocol level 4 (MQTT 3.1.1)
+            0x02, // Connect flags (Clean Session)
             0x00, 0x3c, // Keep alive 60s
-            0x00, 0x04, 0x64, 0x65, 0x6e, 0x6f // Client ID "deno"
+            0x00, clientIdBytes.length, // Client ID length
+            ...clientIdBytes // Client ID
           ]);
           socket.send(connectPacket);
           
-          // Send PUBLISH packet
-          const topicBytes = new TextEncoder().encode(topic);
-          const messageBytes = new TextEncoder().encode(message);
-          const publishPacket = new Uint8Array([
-            0x30, // PUBLISH packet type
-            topicBytes.length + messageBytes.length + 2,
-            0x00, topicBytes.length,
-            ...topicBytes,
-            ...messageBytes
-          ]);
-          socket.send(publishPacket);
+          // Wait for CONNACK before sending PUBLISH
+          socket.addEventListener('message', (event) => {
+            const data = new Uint8Array(event.data);
+            // Check if CONNACK received (0x20)
+            if (data[0] === 0x20) {
+              console.log('CONNACK received, sending PUBLISH');
+              
+              // Send PUBLISH packet
+              const topicBytes = new TextEncoder().encode(topic);
+              const messageBytes = new TextEncoder().encode(message);
+              
+              // Calculate remaining length
+              const remainingLength = 2 + topicBytes.length + messageBytes.length;
+              
+              const publishPacket = new Uint8Array([
+                0x30, // PUBLISH packet type (QoS 0)
+                remainingLength,
+                0x00, topicBytes.length >> 8, // Topic length MSB
+                topicBytes.length & 0xFF, // Topic length LSB
+                ...topicBytes,
+                ...messageBytes
+              ]);
+              socket.send(publishPacket);
+              
+              console.log('PUBLISH packet sent');
+            }
+          });
           
           setTimeout(() => {
             socket.close();

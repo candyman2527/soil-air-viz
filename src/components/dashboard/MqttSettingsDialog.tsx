@@ -71,12 +71,40 @@ export const MqttSettingsDialog = () => {
       return;
     }
 
+    // Validate inputs
+    if (!settings.url.trim()) {
+      toast({
+        title: "ข้อมูลไม่ครบ",
+        description: "กรุณากรอก URL",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!settings.topic.trim()) {
+      toast({
+        title: "ข้อมูลไม่ครบ",
+        description: "กรุณากรอก Topic",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!settings.message.trim()) {
+      toast({
+        title: "ข้อมูลไม่ครบ",
+        description: "กรุณากรอก Message",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const settingsData = {
       user_id: session.user.id,
-      url: settings.url,
+      url: settings.url.trim(),
       port: settings.port,
-      topic: settings.topic,
-      message: settings.message
+      topic: settings.topic.trim(),
+      message: settings.message.trim()
     };
 
     let error;
@@ -127,16 +155,19 @@ export const MqttSettingsDialog = () => {
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="url">URL</Label>
+            <Label htmlFor="url">MQTT Broker URL</Label>
             <Input
               id="url"
-              placeholder="mqtt://broker.example.com"
+              placeholder="110.164.222.23"
               value={settings.url}
               onChange={(e) => setSettings({ ...settings, url: e.target.value })}
             />
+            <p className="text-xs text-muted-foreground">
+              ใส่เฉพาพ IP address หรือ domain name (ไม่ต้องใส่ ws:// หรือ mqtt://)
+            </p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="port">Port</Label>
+            <Label htmlFor="port">MQTT Port</Label>
             <Input
               id="port"
               type="number"
@@ -144,25 +175,34 @@ export const MqttSettingsDialog = () => {
               value={settings.port}
               onChange={(e) => setSettings({ ...settings, port: parseInt(e.target.value) || 1883 })}
             />
+            <p className="text-xs text-muted-foreground">
+              Port สำหรับ MQTT (ระบบจะแปลงเป็น WebSocket port 9001 อัตโนมัติ)
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="topic">Topic</Label>
             <Input
               id="topic"
-              placeholder="sensor/data"
+              placeholder="out/esp32"
               value={settings.topic}
               onChange={(e) => setSettings({ ...settings, topic: e.target.value })}
             />
+            <p className="text-xs text-muted-foreground">
+              Topic ที่ต้องการส่งข้อความไป (เช่น out/esp32)
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="message">Message</Label>
             <Textarea
               id="message"
-              placeholder="ข้อความที่ต้องการส่ง"
+              placeholder="yes"
               value={settings.message}
               onChange={(e) => setSettings({ ...settings, message: e.target.value })}
               rows={4}
             />
+            <p className="text-xs text-muted-foreground">
+              ข้อความที่ต้องการส่งผ่าน MQTT
+            </p>
           </div>
         </div>
         <div className="flex justify-end gap-2">
