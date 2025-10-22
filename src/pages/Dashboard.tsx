@@ -143,7 +143,7 @@ const Dashboard = () => {
     if (settingsError || !mqttSettings) {
       toast({
         title: "ไม่พบการตั้งค่า",
-        description: "กรุณาตั้งค่า MQTT ก่อนส่งข้อมูล",
+        description: "กรุณาตั้งค่า WebSocket ก่อนส่งข้อมูล",
         variant: "destructive",
       });
       return;
@@ -161,13 +161,13 @@ const Dashboard = () => {
     if (error) {
       toast({
         title: "เกิดข้อผิดพลาด",
-        description: "ไม่สามารถส่งข้อมูลไป MQTT ได้",
+        description: "ไม่สามารถส่งข้อมูลไป WebSocket ได้",
         variant: "destructive",
       });
     } else {
       toast({
         title: "สำเร็จ",
-        description: "ส่งข้อมูลไป MQTT เรียบร้อยแล้ว",
+        description: "ส่งข้อมูลไป WebSocket เรียบร้อยแล้ว",
       });
     }
   };

@@ -19,7 +19,7 @@ export const MqttSettingsDialog = () => {
   const [open, setOpen] = useState(false);
   const [settings, setSettings] = useState<MqttSettings>({
     url: "",
-    port: 1883,
+    port: 9001,
     message: ""
   });
   const [settingsId, setSettingsId] = useState<string | null>(null);
@@ -91,7 +91,6 @@ export const MqttSettingsDialog = () => {
       user_id: session.user.id,
       url: settings.url.trim(),
       port: settings.port,
-      topic: "out/esp32", // Fixed topic for WebSocket
       message: settings.message.trim()
     };
 
@@ -123,7 +122,7 @@ export const MqttSettingsDialog = () => {
     } else {
       toast({
         title: "สำเร็จ",
-        description: "บันทึกการตั้งค่า MQTT เรียบร้อยแล้ว",
+        description: "บันทึกการตั้งค่า WebSocket เรียบร้อยแล้ว",
       });
       setOpen(false);
     }
@@ -134,16 +133,16 @@ export const MqttSettingsDialog = () => {
       <DialogTrigger asChild>
         <Button variant="outline" className="flex items-center gap-2 border-border/50">
           <Settings className="h-4 w-4" />
-          ตั้งค่า MQTT
+          ตั้งค่า WebSocket
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>ตั้งค่าการเชื่อมต่อ MQTT</DialogTitle>
+          <DialogTitle>ตั้งค่าการเชื่อมต่อ WebSocket</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="url">MQTT Broker URL</Label>
+            <Label htmlFor="url">WebSocket Server URL</Label>
             <Input
               id="url"
               placeholder="110.164.222.23"
@@ -151,24 +150,24 @@ export const MqttSettingsDialog = () => {
               onChange={(e) => setSettings({ ...settings, url: e.target.value })}
             />
             <p className="text-xs text-muted-foreground">
-              ใส่เฉพาพ IP address หรือ domain name (ไม่ต้องใส่ ws:// หรือ mqtt://)
+              ใส่เฉพาะ IP address หรือ domain name (ไม่ต้องใส่ ws://)
             </p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="port">MQTT Port</Label>
+            <Label htmlFor="port">WebSocket Port</Label>
             <Input
               id="port"
               type="number"
-              placeholder="1883"
+              placeholder="9001"
               value={settings.port}
-              onChange={(e) => setSettings({ ...settings, port: parseInt(e.target.value) || 1883 })}
+              onChange={(e) => setSettings({ ...settings, port: parseInt(e.target.value) || 9001 })}
             />
             <p className="text-xs text-muted-foreground">
-              Port สำหรับ MQTT (ระบบจะแปลงเป็น WebSocket port 9001 อัตโนมัติ)
+              Port สำหรับ WebSocket (เช่น 9001)
             </p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="message">Message</Label>
+            <Label htmlFor="message">ข้อความที่ต้องการส่ง</Label>
             <Textarea
               id="message"
               placeholder="yes"
@@ -177,7 +176,7 @@ export const MqttSettingsDialog = () => {
               rows={4}
             />
             <p className="text-xs text-muted-foreground">
-              ข้อความที่ต้องการส่งผ่าน MQTT
+              ข้อความที่ต้องการส่งผ่าน WebSocket
             </p>
           </div>
         </div>
