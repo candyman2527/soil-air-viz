@@ -11,7 +11,6 @@ import { Settings } from "lucide-react";
 interface MqttSettings {
   url: string;
   port: number;
-  topic: string;
   message: string;
 }
 
@@ -21,7 +20,6 @@ export const MqttSettingsDialog = () => {
   const [settings, setSettings] = useState<MqttSettings>({
     url: "",
     port: 1883,
-    topic: "",
     message: ""
   });
   const [settingsId, setSettingsId] = useState<string | null>(null);
@@ -53,7 +51,6 @@ export const MqttSettingsDialog = () => {
       setSettings({
         url: data.url,
         port: data.port,
-        topic: data.topic,
         message: data.message
       });
       setSettingsId(data.id);
@@ -81,15 +78,6 @@ export const MqttSettingsDialog = () => {
       return;
     }
 
-    if (!settings.topic.trim()) {
-      toast({
-        title: "ข้อมูลไม่ครบ",
-        description: "กรุณากรอก Topic",
-        variant: "destructive",
-      });
-      return;
-    }
-
     if (!settings.message.trim()) {
       toast({
         title: "ข้อมูลไม่ครบ",
@@ -103,7 +91,7 @@ export const MqttSettingsDialog = () => {
       user_id: session.user.id,
       url: settings.url.trim(),
       port: settings.port,
-      topic: settings.topic.trim(),
+      topic: "out/esp32", // Fixed topic for WebSocket
       message: settings.message.trim()
     };
 
@@ -177,18 +165,6 @@ export const MqttSettingsDialog = () => {
             />
             <p className="text-xs text-muted-foreground">
               Port สำหรับ MQTT (ระบบจะแปลงเป็น WebSocket port 9001 อัตโนมัติ)
-            </p>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="topic">Topic</Label>
-            <Input
-              id="topic"
-              placeholder="out/esp32"
-              value={settings.topic}
-              onChange={(e) => setSettings({ ...settings, topic: e.target.value })}
-            />
-            <p className="text-xs text-muted-foreground">
-              Topic ที่ต้องการส่งข้อความไป (เช่น out/esp32)
             </p>
           </div>
           <div className="space-y-2">

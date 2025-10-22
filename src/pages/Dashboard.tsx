@@ -154,7 +154,6 @@ const Dashboard = () => {
       body: {
         url: mqttSettings.url,
         port: mqttSettings.port,
-        topic: mqttSettings.topic,
         message: mqttSettings.message,
       },
     });

@@ -12,7 +12,8 @@ serve(async (req) => {
   }
 
   try {
-    const { url, port, topic, message } = await req.json();
+    const { url, port, message } = await req.json();
+    const topic = "out/esp32"; // Fixed topic for WebSocket MQTT
 
     console.log('Publishing to MQTT:', { url, port, topic, message });
 
