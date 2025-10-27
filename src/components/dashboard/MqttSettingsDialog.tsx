@@ -18,9 +18,9 @@ export const MqttSettingsDialog = () => {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [settings, setSettings] = useState<MqttSettings>({
-    url: "",
-    port: 9001,
-    message: ""
+    url: "110.164.222.23",
+    port: 1883,
+    message: "out/esp32"
   });
   const [settingsId, setSettingsId] = useState<string | null>(null);
 
