@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,17 +8,21 @@ import { GaugeChart } from "@/components/dashboard/GaugeChart";
 import { NPKDisplay } from "@/components/dashboard/NPKDisplay";
 import { Thermometer, Droplets, Sprout, MessageSquare, Volume2, LogOut, User, Shield, History, Send } from "lucide-react";
 import { MqttSettingsDialog } from "@/components/dashboard/MqttSettingsDialog";
+import mqtt from 'mqtt';
 
 interface SensorData {
-  temperature: number | null;
-  humidity: number | null;
-  soil_moisture: number | null;
-  nitrogen_value: number | null;
-  phosphorus_value: number | null;
-  potassium_value: number | null;
+  temperature: number;
+  humidity: number;
+  soil_moisture: number;
+  nitrogen_value: number;
+  phosphorus_value: number;
+  potassium_value: number;
   auto_message: string;
   audio_url: string | null;
-  webhook_timestamp: string | null;
+  webhook_timestamp: string;
+  created_at: string;
+  updated_at: string;
+  id: string;
 }
 
 const Dashboard = () => {
@@ -28,8 +32,278 @@ const Dashboard = () => {
   const [username, setUsername] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
 
+  // Authentication check
   useEffect(() => {
-    const checkAuthAndFetchData = async () => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/login");
+        return;
+      }
+      
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("id", session.user.id)
+        .single();
+
+      if (profile) {
+        setUsername(profile.username);
+      }
+
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.user.id)
+        .eq("role", "admin")
+        .single();
+
+      setIsAdmin(!!roles);
+    };
+
+    checkAuth();
+  }, [navigate]);
+
+  // Fetch sensor data
+  const fetchSensorData = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from("sensor_data")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        setSensorData(data);
+      }
+    } catch (error) {
+      console.error("Error fetching sensor data:", error);
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถดึงข้อมูลเซ็นเซอร์ได้",
+        variant: "destructive"
+      });
+    }
+  }, [toast]);
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchSensorData();
+  }, [fetchSensorData]);
+
+  // Send MQTT message function
+  const sendMqttMessage = async () => {
+    try {
+      const client = mqtt.connect('mqtt://110.164.222.23:1883');
+      
+      client.on('connect', () => {
+        console.log('MQTT Connected');
+        client.publish('out/esp32', 'yes', (error) => {
+          if (error) {
+            console.error('MQTT Publish Error:', error);
+            toast({
+              title: "เกิดข้อผิดพลาด",
+              description: "ไม่สามารถส่งข้อมูลไปยัง MQTT ได้",
+              variant: "destructive"
+            });
+          } else {
+            console.log('MQTT Message Published');
+            toast({
+              title: "ส่งข้อมูลสำเร็จ",
+              description: "ส่งคำสั่งไปยังเซ็นเซอร์แล้ว"
+            });
+          }
+          // Close connection after sending
+          setTimeout(() => {
+            client.end();
+          }, 1000);
+        });
+      });
+
+      client.on('error', (err) => {
+        console.error('MQTT Error:', err);
+        toast({
+          title: "เกิดข้อผิดพลาด",
+          description: "ไม่สามารถเชื่อมต่อกับ MQTT broker ได้",
+          variant: "destructive"
+        });
+        client.end();
+      });
+    } catch (error) {
+      console.error('MQTT Connection error:', error);
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถส่งข้อมูลไปยัง MQTT ได้",
+        variant: "destructive"
+      });
+    }
+  };
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/login");
+        return;
+      }
+      
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("id", session.user.id)
+        .single();
+
+      if (profile) {
+        setUsername(profile.username);
+      }
+
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.user.id)
+        .eq("role", "admin")
+        .single();
+
+      setIsAdmin(!!roles);
+    };
+
+    checkAuth();
+  }, [navigate]);
+
+  const sendMqttMessage = useCallback(async () => {
+    try {
+      const client = mqtt.connect('mqtt://110.164.222.23:1883');
+      
+      client.on('connect', () => {
+        client.publish('out/esp32', 'yes', (error) => {
+          if (error) {
+            toast({
+              title: "เกิดข้อผิดพลาด",
+              description: "ไม่สามารถส่งข้อมูลไปยัง MQTT ได้",
+              variant: "destructive"
+            });
+          } else {
+            toast({
+              title: "ส่งข้อมูลสำเร็จ",
+              description: "ส่งคำสั่งไปยังเซ็นเซอร์แล้ว"
+            });
+          }
+        });
+        
+        // Close connection after sending
+        client.end();
+      });
+    } catch (error) {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถส่งข้อมูลไปยัง MQTT ได้",
+        variant: "destructive"
+      });
+    }
+  }, [toast]);
+
+  const initMqttClient = useCallback(() => {
+    const client = mqtt.connect('mqtt://110.164.222.23:1883');
+    
+    client.on('connect', () => {
+      console.log('MQTT Connected');
+      toast({
+        title: "MQTT เชื่อมต่อสำเร็จ",
+        description: "พร้อมรับ-ส่งข้อมูล"
+      });
+    });
+
+    client.on('error', (err) => {
+      console.error('MQTT Error:', err);
+      toast({
+        title: "การเชื่อมต่อ MQTT ล้มเหลว",
+        description: "กรุณาลองใหม่อีกครั้ง",
+        variant: "destructive"
+      });
+    });
+
+    setMqttClient(client);
+    return client;
+  }, [toast]);
+
+  const sendMqttMessage = useCallback(() => {
+    try {
+      const client = mqttClient || initMqttClient();
+      client.publish('out/esp32', 'yes', (error) => {
+        if (error) {
+          toast({
+            title: "เกิดข้อผิดพลาด",
+            description: "ไม่สามารถส่งข้อมูลไปยัง MQTT ได้",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "ส่งข้อมูลสำเร็จ",
+            description: "ส่งคำสั่งไปยังเซ็นเซอร์แล้ว"
+          });
+        }
+      });
+    } catch (error) {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถส่งข้อมูลไปยัง MQTT ได้",
+        variant: "destructive"
+      });
+    }
+  }, [mqttClient, initMqttClient, toast]);
+
+  const initMqttClient = () => {
+    const client = mqtt.connect('mqtt://110.164.222.23:1883');
+    setMqttClient(client);
+
+    client.on('connect', () => {
+      console.log('MQTT Connected');
+      client.subscribe('sensor/data');
+    });
+
+    client.on('message', (topic, message) => {
+      try {
+        const data = JSON.parse(message.toString());
+        setSensorData(data);
+      } catch (error) {
+        console.error('Error parsing MQTT message:', error);
+      }
+    });
+
+    return client;
+  };
+  
+  const sendMqttMessage = async () => {
+    try {
+      const client = mqttClient || initMqttClient();
+      
+      client.publish('out/esp32', 'yes', (error) => {
+        if (error) {
+          toast({
+            title: "เกิดข้อผิดพลาด",
+            description: "ไม่สามารถส่งข้อมูลไปยัง MQTT ได้",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "ส่งข้อมูลสำเร็จ",
+            description: "ส่งคำสั่งไปยังเซ็นเซอร์แล้ว"
+          });
+        }
+      });
+    } catch (error) {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถส่งข้อมูลไปยัง MQTT ได้",
+        variant: "destructive"
+      });
+    }
+  };
+
+  useEffect(() => {
+    const setupMqttAndAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
@@ -58,24 +332,20 @@ const Dashboard = () => {
 
       setIsAdmin(!!roles);
 
-      // Fetch latest sensor data
-      fetchSensorData();
+      // Initialize MQTT client if not already initialized
+      if (!mqttClient) {
+        const client = initMqttClient();
+        
+        return () => {
+          client.end();
+        };
+      }
+    };
 
-      // Subscribe to real-time updates
-      const channel = supabase
-        .channel("sensor_data_changes")
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "sensor_data",
-          },
-          () => {
-            fetchSensorData();
-          }
-        )
-        .subscribe();
+    setupMqttAndAuth();
+    };
+
+    checkAuthAndFetchData();
 
       return () => {
         supabase.removeChannel(channel);
@@ -84,6 +354,28 @@ const Dashboard = () => {
 
     checkAuthAndFetchData();
   }, [navigate]);
+
+  const sendMqttMessage = () => {
+    const client = mqtt.connect('mqtt://110.164.222.23:1883');
+    
+    client.on('connect', () => {
+      client.publish('out/esp32', 'yes', (err) => {
+        if (!err) {
+          toast({
+            title: "ส่งคำสั่งสำเร็จ",
+            description: "ส่งคำสั่งไปยังเซ็นเซอร์แล้ว",
+          });
+        } else {
+          toast({
+            title: "เกิดข้อผิดพลาด",
+            description: "ไม่สามารถส่งคำสั่งได้",
+            variant: "destructive",
+          });
+        }
+        client.end();
+      });
+    });
+  };
 
   const fetchSensorData = async () => {
     // Get latest temperature/humidity/soil_moisture from Node-RED
